@@ -7,13 +7,21 @@ import { CreatePokemonDto } from './dto/create-pokemon.dto'
 import { UpdatePokemonDto } from './dto/update-pokemon.dto'
 
 import { Pokemon } from './entities/pokemon.entity'
+import { PaginationDto } from 'src/common/dto/pagination.dto'
+import { ConfigService } from '@nestjs/config'
 
 @Injectable()
 export class PokemonService {
   private existingCodes = new Map<number, string>()
+  private defaultLimit: number
 
-  constructor(@InjectModel(Pokemon.name) private readonly _pokemonModel: Model<Pokemon>) {
+  constructor(
+    @InjectModel(Pokemon.name) private readonly _pokemonModel: Model<Pokemon>,
+    private readonly _configService: ConfigService,
+  ) {
     this.existingCodes.set(11000, 'Pokemon already exists')
+
+    this.defaultLimit = this._configService.getOrThrow('defaultLimit')
   }
 
   async create(createPokemonDto: CreatePokemonDto): Promise<Pokemon> {
@@ -27,8 +35,20 @@ export class PokemonService {
     }
   }
 
-  findAll(): string {
-    return `This action returns all pokemon`
+  async createMany(pokemons: CreatePokemonDto[]): Promise<Pokemon[]> {
+    const createdPokemons = await this._pokemonModel.insertMany(pokemons)
+    return createdPokemons
+  }
+
+  findAll(paginationDto: PaginationDto): Promise<Pokemon[]> {
+    const { limit = this.defaultLimit, offset = 0 } = paginationDto
+
+    return this._pokemonModel
+      .find()
+      .limit(limit)
+      .skip(offset)
+      .sort({ no: 1 })
+      .select('-__v')
   }
 
   async findOne(term: string): Promise<Pokemon> {
@@ -77,6 +97,10 @@ export class PokemonService {
 
     if (deletedCount === 0)
       throw new BadRequestException(`Pokemon with id "${id}" not found`)
+  }
+
+  async removeAll(): Promise<void> {
+    await this._pokemonModel.deleteMany({})
   }
 
   private handleExceptions(error: any): never {

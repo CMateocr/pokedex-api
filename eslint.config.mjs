@@ -46,7 +46,7 @@ export default tseslint.config(
       '@typescript-eslint/no-unsafe-call': 'off',
       '@typescript-eslint/interface-name-prefix': 'off',
       '@typescript-eslint/explicit-function-return-type': 'warn',
-      '@typescript-eslint/explicit-module-boundary-types': 'error',
+      '@typescript-eslint/explicit-module-boundary-types': 'warn',
       '@typescript-eslint/no-unused-vars': 'warn',
 
       'prettier/prettier': 'error',
